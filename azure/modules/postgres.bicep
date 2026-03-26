@@ -1,5 +1,8 @@
 param location string
 param prefix string
+param administratorLogin string = 'postgresadmin'
+@secure()
+param administratorLoginPassword string
 
 resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' = {
   name: '${prefix}-pg'
@@ -10,11 +13,10 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2023-06-01-preview' =
   }
   properties: {
     version: '16'
-    administratorLogin: 'postgresadmin'
-    administratorLoginPassword: 'replace-me'
+    administratorLogin: administratorLogin
+    administratorLoginPassword: administratorLoginPassword
     storage: {
       storageSizeGB: 32
     }
   }
 }
-

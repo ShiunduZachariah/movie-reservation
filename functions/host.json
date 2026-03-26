@@ -1,11 +1,27 @@
 {
   "version": "2.0",
+  "customHandler": {
+    "description": {
+      "defaultExecutablePath": "handler",
+      "arguments": [
+        "--port",
+        "%FUNCTIONS_CUSTOMHANDLER_PORT%"
+      ]
+    }
+  },
   "logging": {
     "applicationInsights": {
       "samplingSettings": {
         "isEnabled": true
       }
+    },
+    "console": {
+      "isEnabled": true
     }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
   },
   "extensions": {
     "queues": {
@@ -17,4 +33,3 @@
     }
   }
 }
-

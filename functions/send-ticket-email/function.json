@@ -4,9 +4,8 @@
       "type": "queueTrigger",
       "direction": "in",
       "name": "ticketEmailQueue",
-      "queueName": "ticket-emails",
+      "queueName": "%TICKET_EMAIL_QUEUE_NAME%",
       "connection": "AzureWebJobsStorage"
     }
   ]
 }
-

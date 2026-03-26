@@ -1,0 +1,11 @@
+.git
+.github
+.gocache
+.gomodcache
+docker-compose.yml
+postman
+docs
+azure
+functions
+tmp
+*.log

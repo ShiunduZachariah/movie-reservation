@@ -1,0 +1,69 @@
+name: Build and Deploy Functions
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - "apps/backend/templates/emails/**"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/deploy-functions.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build function custom handler package
+        run: |
+          rm -rf .azure-functions-package
+          mkdir -p .azure-functions-package/send-ticket-email
+          mkdir -p .azure-functions-package/expire-reservations
+          mkdir -p .azure-functions-package/templates/emails
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./.azure-functions-package/handler ./functions/cmd/handler
+          cp ./functions/host.json ./.azure-functions-package/host.json
+          cp ./functions/send-ticket-email/function.json ./.azure-functions-package/send-ticket-email/function.json
+          cp ./functions/expire-reservations/function.json ./.azure-functions-package/expire-reservations/function.json
+          cp ./apps/backend/templates/emails/ticket_confirmation.html ./.azure-functions-package/templates/emails/ticket_confirmation.html
+          chmod +x ./.azure-functions-package/handler
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Function App settings
+        run: |
+          az functionapp config appsettings set \
+            --name "${{ vars.AZURE_FUNCTION_APP_NAME }}" \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --settings \
+              AzureWebJobsStorage="${{ secrets.AZURE_WEBJOBS_STORAGE }}" \
+              FUNCTIONS_WORKER_RUNTIME=Custom \
+              TICKET_EMAIL_QUEUE_NAME="${{ vars.AZURE_TICKET_EMAIL_QUEUE_NAME }}" \
+              DATABASE_URL="${{ secrets.AZURE_FUNCTION_DATABASE_URL }}" \
+              RESEND_API_KEY="${{ secrets.AZURE_RESEND_API_KEY }}" \
+              RESEND_FROM="${{ secrets.AZURE_RESEND_FROM }}"
+
+      - name: Deploy Azure Functions package
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ vars.AZURE_FUNCTION_APP_NAME }}
+          package: ./.azure-functions-package
