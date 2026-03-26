@@ -35,6 +35,14 @@ func (h *MovieHandler) List(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"movies": movies})
 }
 
+func (h *MovieHandler) ListGenres(c echo.Context) error {
+	genres, err := h.movies.ListGenres(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]any{"genres": genres})
+}
+
 func (h *MovieHandler) Get(c echo.Context) error {
 	movie, err := h.movies.Get(c.Request().Context(), c.Param("id"))
 	if err != nil {

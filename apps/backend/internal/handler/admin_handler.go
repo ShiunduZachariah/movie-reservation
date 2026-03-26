@@ -53,3 +53,11 @@ func (h *AdminHandler) Promote(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusNoContent)
 }
+
+func (h *AdminHandler) Screens(c echo.Context) error {
+	screens, err := h.showtimes.ListScreens(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]any{"screens": screens})
+}

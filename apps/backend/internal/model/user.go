@@ -9,8 +9,9 @@ const (
 
 type User struct {
 	Base
-	ClerkID string   `db:"clerk_id" json:"clerk_id"`
-	Email   string   `db:"email" json:"email"`
-	Name    string   `db:"name" json:"name"`
-	Role    UserRole `db:"role" json:"role"`
+	ClerkID      string   `db:"clerk_id" json:"clerk_id"`
+	Email        string   `db:"email" json:"email"`
+	Name         string   `db:"name" json:"name"`
+	Role         UserRole `db:"role" json:"role"`
+	PasswordHash *string  `db:"password_hash" json:"-"`
 }

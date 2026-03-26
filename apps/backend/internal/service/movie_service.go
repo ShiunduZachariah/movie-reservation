@@ -9,6 +9,7 @@ import (
 	"github.com/ShiunduZachariah/movie-reservation/apps/backend/internal/repository"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog"
 )
 
 type MovieService struct {
@@ -17,6 +18,7 @@ type MovieService struct {
 	genres        *repository.GenreRepository
 	blobClient    *blob.Client
 	containerName string
+	logger        *zerolog.Logger
 }
 
 type SaveMovieInput struct {
@@ -27,8 +29,8 @@ type SaveMovieInput struct {
 	GenreIDs        []uuid.UUID
 }
 
-func NewMovieService(db *pgxpool.Pool, movies *repository.MovieRepository, genres *repository.GenreRepository, blobClient *blob.Client, containerName string) *MovieService {
-	return &MovieService{db: db, movies: movies, genres: genres, blobClient: blobClient, containerName: containerName}
+func NewMovieService(db *pgxpool.Pool, movies *repository.MovieRepository, genres *repository.GenreRepository, blobClient *blob.Client, containerName string, logger *zerolog.Logger) *MovieService {
+	return &MovieService{db: db, movies: movies, genres: genres, blobClient: blobClient, containerName: containerName, logger: logger}
 }
 
 func (s *MovieService) List(ctx context.Context, search, genreID string) ([]*model.Movie, error) {
@@ -41,6 +43,10 @@ func (s *MovieService) List(ctx context.Context, search, genreID string) ([]*mod
 		filters.GenreID = &id
 	}
 	return s.movies.List(ctx, filters)
+}
+
+func (s *MovieService) ListGenres(ctx context.Context) ([]model.Genre, error) {
+	return s.genres.ListAll(ctx)
 }
 
 func (s *MovieService) Get(ctx context.Context, movieID string) (*model.Movie, error) {
@@ -73,6 +79,12 @@ func (s *MovieService) Create(ctx context.Context, input SaveMovieInput) (*model
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	s.logger.Info().
+		Str("event", "movie_created").
+		Str("movie_id", movie.ID.String()).
+		Str("title", movie.Title).
+		Int("genre_count", len(input.GenreIDs)).
+		Msg("movie created successfully")
 	return s.movies.GetByID(ctx, movie.ID)
 }
 
@@ -102,6 +114,12 @@ func (s *MovieService) Update(ctx context.Context, movieID string, input SaveMov
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	s.logger.Info().
+		Str("event", "movie_updated").
+		Str("movie_id", id.String()).
+		Str("title", input.Title).
+		Int("genre_count", len(input.GenreIDs)).
+		Msg("movie updated successfully")
 	return s.movies.GetByID(ctx, id)
 }
 
@@ -120,6 +138,10 @@ func (s *MovieService) Delete(ctx context.Context, movieID string) error {
 	if err := s.movies.Delete(ctx, tx, id); err != nil {
 		return err
 	}
+	s.logger.Info().
+		Str("event", "movie_deleted").
+		Str("movie_id", id.String()).
+		Msg("movie deleted successfully")
 	return tx.Commit(ctx)
 }
 
@@ -149,5 +171,10 @@ func (s *MovieService) UploadPoster(ctx context.Context, movieID string, data []
 	if err := tx.Commit(ctx); err != nil {
 		return "", err
 	}
+	s.logger.Info().
+		Str("event", "movie_poster_uploaded").
+		Str("movie_id", id.String()).
+		Str("poster_url", url).
+		Msg("movie poster uploaded successfully")
 	return url, nil
 }

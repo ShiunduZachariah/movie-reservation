@@ -9,6 +9,7 @@ import (
 	"github.com/ShiunduZachariah/movie-reservation/apps/backend/internal/repository"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog"
 	"github.com/shopspring/decimal"
 )
 
@@ -17,6 +18,7 @@ type ShowtimeService struct {
 	showtimes *repository.ShowtimeRepository
 	screens   *repository.ScreenRepository
 	seats     *repository.SeatRepository
+	logger    *zerolog.Logger
 }
 
 type CreateShowtimeInput struct {
@@ -27,8 +29,8 @@ type CreateShowtimeInput struct {
 	TicketPrice decimal.Decimal
 }
 
-func NewShowtimeService(db *pgxpool.Pool, showtimes *repository.ShowtimeRepository, screens *repository.ScreenRepository, seats *repository.SeatRepository) *ShowtimeService {
-	return &ShowtimeService{db: db, showtimes: showtimes, screens: screens, seats: seats}
+func NewShowtimeService(db *pgxpool.Pool, showtimes *repository.ShowtimeRepository, screens *repository.ScreenRepository, seats *repository.SeatRepository, logger *zerolog.Logger) *ShowtimeService {
+	return &ShowtimeService{db: db, showtimes: showtimes, screens: screens, seats: seats, logger: logger}
 }
 
 func (s *ShowtimeService) Create(ctx context.Context, input CreateShowtimeInput) (*model.Showtime, error) {
@@ -58,6 +60,14 @@ func (s *ShowtimeService) Create(ctx context.Context, input CreateShowtimeInput)
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	s.logger.Info().
+		Str("event", "showtime_created").
+		Str("showtime_id", showtime.ID.String()).
+		Str("movie_id", input.MovieID.String()).
+		Str("screen_id", input.ScreenID.String()).
+		Time("start_time", input.StartTime).
+		Time("end_time", input.EndTime).
+		Msg("showtime created successfully")
 	return s.showtimes.GetByID(ctx, showtime.ID)
 }
 
@@ -83,4 +93,16 @@ func (s *ShowtimeService) AvailableSeats(ctx context.Context, showtimeID string)
 		return nil, errs.BadRequest("INVALID_SHOWTIME_ID", "invalid showtime id", nil)
 	}
 	return s.seats.ListAvailableByShowtime(ctx, id)
+}
+
+func (s *ShowtimeService) ListScreens(ctx context.Context) ([]*model.Screen, error) {
+	return s.screens.List(ctx)
+}
+
+func (s *ShowtimeService) ListSeatsByScreen(ctx context.Context, screenID string) ([]*model.Seat, error) {
+	id, err := uuid.Parse(screenID)
+	if err != nil {
+		return nil, errs.BadRequest("INVALID_SCREEN_ID", "invalid screen id", nil)
+	}
+	return s.seats.ListByScreen(ctx, id)
 }

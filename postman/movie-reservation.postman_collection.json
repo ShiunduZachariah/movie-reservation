@@ -1,0 +1,474 @@
+{
+  "info": {
+    "_postman_id": "2ff2d8da-0ed8-4864-9288-42e64d6d995c",
+    "name": "Movie Reservation Service",
+    "description": "Postman collection for testing the Movie Reservation Service API, including local register/login flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "bearerToken", "value": "" },
+    { "key": "adminBearerToken", "value": "" },
+    { "key": "adminEmail", "value": "shiunduzachariah@gmail.com" },
+    { "key": "adminPassword", "value": "Test123" },
+    { "key": "userEmail", "value": "user@example.com" },
+    { "key": "userPassword", "value": "Test123" },
+    { "key": "username", "value": "TestUser" },
+    { "key": "movieId", "value": "replace-with-movie-id" },
+    { "key": "genreId", "value": "replace-with-genre-id" },
+    { "key": "screenId", "value": "replace-with-screen-id" },
+    { "key": "showtimeId", "value": "replace-with-showtime-id" },
+    { "key": "reservationId", "value": "replace-with-reservation-id" },
+    { "key": "userId", "value": "replace-with-user-id" },
+    { "key": "seatId1", "value": "replace-with-seat-id-1" },
+    { "key": "seatId2", "value": "replace-with-seat-id-2" }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) { pm.collectionVariables.set('bearerToken', json.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\",\n  \"username\": \"{{username}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) { pm.collectionVariables.set('bearerToken', json.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Seeded Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) { pm.collectionVariables.set('adminBearerToken', json.token); }",
+                  "if (json.user && json.user.id) { pm.collectionVariables.set('userId', json.user.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "List Genres",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/genres",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "genres"]
+            }
+          }
+        },
+        {
+          "name": "List Movies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/movies?search=&genre_id=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "movies"],
+              "query": [
+                { "key": "search", "value": "" },
+                { "key": "genre_id", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Movie",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/movies/{{movieId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "movies", "{{movieId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Showtimes By Date",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/showtimes?date=2026-03-26",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "showtimes"],
+              "query": [
+                { "key": "date", "value": "2026-03-26" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Showtimes By Movie",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/showtimes?movie_id={{movieId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "showtimes"],
+              "query": [
+                { "key": "movie_id", "value": "{{movieId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Available Seats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/showtimes/{{showtimeId}}/seats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "showtimes", "{{showtimeId}}", "seats"]
+            }
+          }
+        },
+        {
+          "name": "List Seats By Screen",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/screens/{{screenId}}/seats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "screens", "{{screenId}}", "seats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Create Reservation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{bearerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"showtime_id\": \"{{showtimeId}}\",\n  \"seat_ids\": [\n    \"{{seatId1}}\",\n    \"{{seatId2}}\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reservations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reservations"]
+            }
+          }
+        },
+        {
+          "name": "List My Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{bearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reservations/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reservations", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Reservation",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{bearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reservations/{{reservationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reservations", "{{reservationId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Reservation",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{bearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reservations/{{reservationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reservations", "{{reservationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List Screens",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/screens",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "screens"]
+            }
+          }
+        },
+        {
+          "name": "Create Movie",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Dune: Part Two\",\n  \"description\": \"Epic sci-fi adventure.\",\n  \"poster_url\": \"https://example.com/poster.jpg\",\n  \"duration_minutes\": 166,\n  \"genre_ids\": [\n    \"{{genreId}}\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/movies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "movies"]
+            }
+          }
+        },
+        {
+          "name": "Update Movie",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Dune: Part Two\",\n  \"description\": \"Updated description.\",\n  \"poster_url\": \"https://example.com/poster-updated.jpg\",\n  \"duration_minutes\": 166,\n  \"genre_ids\": [\n    \"{{genreId}}\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/movies/{{movieId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "movies", "{{movieId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Movie",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/movies/{{movieId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "movies", "{{movieId}}"]
+            }
+          }
+        },
+        {
+          "name": "Upload Movie Poster",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/movies/{{movieId}}/poster",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "movies", "{{movieId}}", "poster"]
+            }
+          }
+        },
+        {
+          "name": "Create Showtime",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movie_id\": \"{{movieId}}\",\n  \"screen_id\": \"{{screenId}}\",\n  \"start_time\": \"2026-03-26T19:30:00Z\",\n  \"end_time\": \"2026-03-26T22:16:00Z\",\n  \"ticket_price\": \"1200.00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/showtimes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "showtimes"]
+            }
+          }
+        },
+        {
+          "name": "List All Reservations",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reservations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "reservations"]
+            }
+          }
+        },
+        {
+          "name": "Revenue Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reports/revenue?from=2026-01-01&to=2026-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "reports", "revenue"],
+              "query": [
+                { "key": "from", "value": "2026-01-01" },
+                { "key": "to", "value": "2026-12-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Capacity Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/reports/capacity",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "reports", "capacity"]
+            }
+          }
+        },
+        {
+          "name": "Promote User To Admin",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminBearerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/users/{{userId}}/promote",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "users", "{{userId}}", "promote"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

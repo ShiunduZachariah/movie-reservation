@@ -111,3 +111,24 @@ func (h *ShowtimeHandler) Seats(c echo.Context) error {
 		"seats":           response,
 	})
 }
+
+func (h *ShowtimeHandler) ScreenSeats(c echo.Context) error {
+	seats, err := h.showtimes.ListSeatsByScreen(c.Request().Context(), c.Param("id"))
+	if err != nil {
+		return err
+	}
+	response := make([]map[string]any, 0, len(seats))
+	for _, seat := range seats {
+		response = append(response, map[string]any{
+			"id":     seat.ID.String(),
+			"row":    seat.Row,
+			"number": seat.Number,
+			"label":  utils.SeatLabel(seat.Row, seat.Number),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]any{
+		"screen_id": c.Param("id"),
+		"count":     len(response),
+		"seats":     response,
+	})
+}

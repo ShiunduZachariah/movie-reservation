@@ -106,6 +106,15 @@ func (s *ReservationService) ReserveSeats(ctx context.Context, input CreateReser
 		s.logger.Error().Err(enqueueErr).Str("reservation_id", reservation.ID.String()).Msg("failed to enqueue ticket confirmation email")
 	}
 
+	s.logger.Info().
+		Str("event", "reservation_created").
+		Str("reservation_id", reservation.ID.String()).
+		Str("user_id", reservation.UserID.String()).
+		Str("showtime_id", reservation.ShowtimeID.String()).
+		Int("seat_count", len(input.SeatIDs)).
+		Str("total_price", reservation.TotalPrice.StringFixed(2)).
+		Msg("reservation created successfully")
+
 	return reservation, nil
 }
 
@@ -156,6 +165,12 @@ func (s *ReservationService) CancelReservation(ctx context.Context, reservationI
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	s.logger.Info().
+		Str("event", "reservation_cancelled").
+		Str("reservation_id", reservation.ID.String()).
+		Str("user_id", reservation.UserID.String()).
+		Str("showtime_id", reservation.ShowtimeID.String()).
+		Msg("reservation cancelled successfully")
 	return s.repos.Reservations.GetByID(ctx, reservation.ID)
 }
 

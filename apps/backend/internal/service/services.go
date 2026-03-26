@@ -12,6 +12,7 @@ import (
 )
 
 type Services struct {
+	Auth         *AuthService
 	Users        *UserService
 	Movies       *MovieService
 	Showtimes    *ShowtimeService
@@ -20,13 +21,15 @@ type Services struct {
 }
 
 func New(cfg *config.Config, repos *repository.Repositories, db *pgxpool.Pool, jobs *job.Service, emailClient *email.Client, blobClient *blob.Client, queueClient *azqueue.QueueClient, logger *zerolog.Logger) *Services {
+	auth := NewAuthService(db, repos.Users, cfg.Auth.SecretKey, logger)
 	users := NewUserService(db, repos.Users)
-	movies := NewMovieService(db, repos.Movies, repos.Genres, blobClient, cfg.Azure.StorageContainerName)
-	showtimes := NewShowtimeService(db, repos.Showtimes, repos.Screens, repos.Seats)
+	movies := NewMovieService(db, repos.Movies, repos.Genres, blobClient, cfg.Azure.StorageContainerName, logger)
+	showtimes := NewShowtimeService(db, repos.Showtimes, repos.Screens, repos.Seats, logger)
 	reservations := NewReservationService(cfg, db, repos, jobs, queueClient, logger)
 	admin := NewAdminService(db, repos, users)
 
 	return &Services{
+		Auth:         auth,
 		Users:        users,
 		Movies:       movies,
 		Showtimes:    showtimes,

@@ -5,6 +5,7 @@ import "github.com/ShiunduZachariah/movie-reservation/apps/backend/internal/serv
 type Handlers struct {
 	Base         *Base
 	Health       *HealthHandler
+	Auth         *AuthHandler
 	Movies       *MovieHandler
 	Showtimes    *ShowtimeHandler
 	Reservations *ReservationHandler
@@ -16,6 +17,7 @@ func New(services *service.Services) *Handlers {
 	return &Handlers{
 		Base:         base,
 		Health:       NewHealthHandler(),
+		Auth:         NewAuthHandler(base, services.Auth),
 		Movies:       NewMovieHandler(base, services.Movies),
 		Showtimes:    NewShowtimeHandler(base, services.Showtimes),
 		Reservations: NewReservationHandler(base, services.Reservations),

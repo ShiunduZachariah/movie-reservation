@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/ShiunduZachariah/movie-reservation/apps/backend/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -38,7 +39,12 @@ func Migrate(ctx context.Context, cfg config.DatabaseConfig, logger *zerolog.Log
 		return fmt.Errorf("new migrator: %w", err)
 	}
 
-	migrationsFS := os.DirFS("internal/database/migrations")
+	migrationsPath, err := resolveMigrationsPath()
+	if err != nil {
+		return err
+	}
+
+	migrationsFS := os.DirFS(migrationsPath)
 	if err := migrator.LoadMigrations(migrationsFS); err != nil {
 		return fmt.Errorf("load migrations: %w", err)
 	}
@@ -57,4 +63,19 @@ func Migrate(ctx context.Context, cfg config.DatabaseConfig, logger *zerolog.Log
 
 	logger.Info().Str("direction", direction).Msg("migrations completed")
 	return nil
+}
+
+func resolveMigrationsPath() (string, error) {
+	candidates := []string{
+		filepath.Join("apps", "backend", "internal", "database", "migrations"),
+		filepath.Join("internal", "database", "migrations"),
+	}
+
+	for _, candidate := range candidates {
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("resolve migrations path: could not find migrations directory")
 }
