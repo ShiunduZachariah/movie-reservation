@@ -1,0 +1,23 @@
+# Environment
+.env
+
+# Go
+bin/
+dist/
+coverage.out
+*.test
+
+# Workspace caches
+.gocache/
+.gomodcache/
+
+# Node / frontend
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db

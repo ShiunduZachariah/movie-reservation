@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "type": "queueTrigger",
+      "direction": "in",
+      "name": "ticketEmailQueue",
+      "queueName": "ticket-emails",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}
+

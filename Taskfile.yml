@@ -1,0 +1,47 @@
+version: "3"
+
+tasks:
+  run:
+    cmds:
+      - go run ./apps/backend/cmd/movie-reservation
+
+  build:
+    cmds:
+      - go build ./...
+
+  test:
+    cmds:
+      - go test ./...
+
+  fmt:
+    cmds:
+      - gofmt -w apps functions
+
+  up:
+    cmds:
+      - docker compose up -d
+
+  down:
+    cmds:
+      - docker compose down
+
+  logs:
+    cmds:
+      - docker compose logs -f
+
+  migrate-up:
+    cmds:
+      - go run ./apps/backend/cmd/movie-reservation migrate up
+
+  migrate-down:
+    cmds:
+      - go run ./apps/backend/cmd/movie-reservation migrate down
+
+  functions-test:
+    cmds:
+      - go test ./functions/...
+
+  dev:
+    cmds:
+      - task up
+      - task migrate-up

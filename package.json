@@ -1,0 +1,13 @@
+{
+  "name": "movie-reservation",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "echo \"No JS packages configured yet\"",
+    "lint": "echo \"No JS packages configured yet\""
+  }
+}
+
