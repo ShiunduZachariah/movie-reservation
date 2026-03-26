@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azqueue"
 	"github.com/ShiunduZachariah/movie-reservation/apps/backend/internal/config"
@@ -72,7 +73,20 @@ func (s *ReservationService) ReserveSeats(ctx context.Context, input CreateReser
 		return nil, err
 	}
 	if len(takenSeats) > 0 {
-		return nil, errs.Conflict("SEATS_NOT_AVAILABLE", "one or more seats are already reserved")
+		takenLabels := make([]string, 0, len(takenSeats))
+		for _, seat := range takenSeats {
+			takenLabels = append(takenLabels, seat.Label())
+		}
+		return nil, errs.ConflictWithFields(
+			"SEATS_NOT_AVAILABLE",
+			fmt.Sprintf("the following seats are already reserved: %s", strings.Join(takenLabels, ", ")),
+			[]errs.FieldError{
+				{
+					Field: "seat_ids",
+					Error: fmt.Sprintf("already reserved seats: %s", strings.Join(takenLabels, ", ")),
+				},
+			},
+		)
 	}
 
 	totalPrice := showtime.TicketPrice.Mul(decimal.NewFromInt(int64(len(input.SeatIDs))))

@@ -56,7 +56,7 @@ func New(ctx context.Context, cfg *config.Config, logger *zerolog.Logger) (*Serv
 		logger.Info().Str("component", "redis").Str("address", cfg.Redis.Address).Msg("redis initialized")
 	}
 
-	emailClient := email.New(cfg.Integration.ResendAPIKey)
+	emailClient := email.New(cfg.Integration.ResendAPIKey, cfg.Integration.ResendFrom)
 	logger.Info().Str("component", "email").Msg("email client initialized")
 	jobService := job.New(cfg, emailClient, logger)
 	logger.Info().Str("component", "jobs").Str("mode", "asynq").Msg("job service initialized")

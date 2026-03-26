@@ -49,6 +49,10 @@ func Conflict(code, message string) *HTTPError {
 	return New(http.StatusConflict, code, message, false, nil)
 }
 
+func ConflictWithFields(code, message string, fieldErrors []FieldError) *HTTPError {
+	return New(http.StatusConflict, code, message, false, fieldErrors)
+}
+
 func BadRequest(code, message string, fieldErrors []FieldError) *HTTPError {
 	return New(http.StatusBadRequest, code, message, true, fieldErrors)
 }

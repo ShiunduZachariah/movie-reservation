@@ -59,6 +59,7 @@ type RedisConfig struct {
 
 type IntegrationConfig struct {
 	ResendAPIKey string `koanf:"resend_api_key" validate:"required"`
+	ResendFrom   string `koanf:"resend_from"`
 }
 
 type AppConfig struct {
