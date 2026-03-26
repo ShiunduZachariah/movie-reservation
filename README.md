@@ -2,6 +2,10 @@
 
 `movie-reservation` is a Go backend for browsing movies and showtimes, reserving seats, handling admin workflows, and sending ticket confirmations.
 
+Project brief:
+
+- https://roadmap.sh/projects/movie-reservation-system
+
 The project is built around:
 
 - Echo for the HTTP API
