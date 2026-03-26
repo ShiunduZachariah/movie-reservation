@@ -1,101 +1,90 @@
 # Movie Reservation Service
 
-A Go-based movie reservation backend for browsing movies and showtimes, reserving seats, sending ticket confirmations, and preparing the service for Azure deployment.
+`movie-reservation` is a Go backend for browsing movies and showtimes, reserving seats, handling admin workflows, and sending ticket confirmations.
 
-The project is built around a layered architecture:
+The project is built around:
 
 - Echo for the HTTP API
 - PostgreSQL for core data
 - Redis + Asynq for local background jobs
-- Azure Functions for timer and queue-driven background processing
+- Azure Queue + Azure Functions for production-oriented async processing
 - Resend for transactional email
 - Azure Blob Storage for poster uploads
-- Bicep for infrastructure scaffolding
+- Bicep for infrastructure
+- GitHub Actions for CI/CD
+- GitHub Container Registry for the API image
 
 ## Current Status
 
-Implemented in the repo today:
+Working in the repo today:
 
-- Project scaffold with backend, functions, and Azure folders
-- Environment-based config loading and validation
+- local API startup with config validation
 - PostgreSQL schema and seed migrations
-- Movie, showtime, reservation, and admin reporting service layers
-- Seat reservation flow with `SELECT ... FOR UPDATE`
-- Ticket confirmation email template and Asynq task
-- Azure Function stubs for reservation expiry and queue-based email sending
-- Azure Blob client scaffold for poster uploads
-- Basic tests for config, health, and job payloads
+- local auth with register/login endpoints
+- public movies, genres, showtimes, and seat lookup endpoints
+- authenticated reservation create/list/get/cancel flow
+- admin movie, showtime, screen, reporting, and promote-user endpoints
+- reservation locking with `SELECT ... FOR UPDATE`
+- local ticket email dispatch with Redis + Asynq
+- Azure Functions custom-handler packaging scaffold
+- Azure Bicep modules for PostgreSQL, storage, Key Vault, monitoring, and optional ACR
+- GitHub Actions workflows for infra, API, and Functions deployment
 
-Not fully complete yet:
+Still incomplete:
 
-- Live Clerk authentication integration
-- End-to-end Azure deployment wiring
-- Full repository/service concurrency and integration test coverage
-- Production-ready Azure Function runtime integration
-- Complete infrastructure modules for Container Apps and Function Apps
+- live Clerk integration
+- Bicep modules for the Container Apps host and Function App host
+- full Azure runtime secret wiring through Key Vault references
+- end-to-end Azure validation in a real subscription
+- broader integration and concurrency test coverage
 
-## Repository Structure
+## Repository Layout
 
 ```text
 movie-reservation/
-├── apps/
-│   └── backend/
-│       ├── cmd/movie-reservation/
-│       ├── internal/
-│       └── templates/emails/
-├── functions/
-│   ├── expire-reservations/
-│   └── send-ticket-email/
-├── azure/
-│   ├── main.bicep
-│   └── modules/
-├── docker-compose.yml
-├── Taskfile.yml
-├── .env
-└── .env.sample
+|-- apps/
+|   `-- backend/
+|       |-- cmd/movie-reservation/
+|       |-- internal/
+|       `-- templates/emails/
+|-- functions/
+|   |-- cmd/handler/
+|   |-- expire-reservations/
+|   `-- send-ticket-email/
+|-- azure/
+|   |-- main.bicep
+|   `-- modules/
+|-- .github/workflows/
+|-- docs/
+|-- docker-compose.yml
+|-- Dockerfile
+`-- Taskfile.yml
 ```
 
-## Tech Stack
+## Local Development
 
-- Go 1.25
-- Echo
-- PostgreSQL
-- Redis
-- Asynq
-- Resend
-- Azure Storage Queue
-- Azure Blob Storage
-- Azure Functions
-- Bicep
-
-## Quick Start
-
-### 1. Prerequisites
-
-Install:
+### Prerequisites
 
 - Go 1.25+
 - Docker Desktop
 - `task` CLI
 
-### 2. Configure environment
+### Environment
 
-The repo already includes a local [.env](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/.env) for development. Before real use, replace the placeholder values for secrets and external services.
+Local development uses [.env](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/.env). The sample version is [.env.sample](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/.env.sample).
 
-The most important variables are:
+Most important values:
 
 - `CINERESERVE_AUTH.SECRET_KEY`
 - `CINERESERVE_INTEGRATION.RESEND_API_KEY`
+- `CINERESERVE_INTEGRATION.RESEND_FROM`
 - `CINERESERVE_APP.BASE_URL`
 - `CINERESERVE_AZURE.STORAGE_CONNECTION_STRING`
-
-For Azure Functions you will also need:
-
 - `DATABASE_URL`
 - `RESEND_API_KEY`
 - `AzureWebJobsStorage`
 
-### 3. Start local dependencies
+### Start dependencies
 
 ```bash
 task up
@@ -103,22 +92,22 @@ task up
 
 This starts:
 
-- PostgreSQL on `localhost:5432`
+- PostgreSQL on `localhost:5434`
 - Redis on `localhost:6379`
 
-### 4. Run migrations
+### Apply migrations
 
 ```bash
 task migrate-up
 ```
 
-### 5. Start the API
+### Run the API
 
 ```bash
 task run
 ```
 
-The service starts on:
+The API listens on:
 
 ```text
 http://localhost:8080
@@ -132,215 +121,145 @@ GET /status
 
 ## Task Commands
 
-The root [Taskfile.yml](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/Taskfile.yml) exposes simple commands:
+The root [Taskfile.yml](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/Taskfile.yml) provides:
 
 ```bash
-task run            # start the backend
-task build          # build everything
-task test           # run Go tests
-task fmt            # format Go files
-task up             # start postgres + redis
-task down           # stop local services
-task logs           # tail docker logs
-task migrate-up     # apply database migrations
-task migrate-down   # rollback migrations
-task functions-test # run function package tests
-task dev            # start deps and run migrations
+task run
+task build
+task test
+task fmt
+task up
+task down
+task logs
+task migrate-up
+task migrate-down
+task functions-test
+task dev
 ```
 
-## Environment Variables
+## API Surface
 
-### Core application
-
-- `CINERESERVE_PRIMARY.ENV`
-- `CINERESERVE_SERVER.PORT`
-- `CINERESERVE_SERVER.READ_TIMEOUT`
-- `CINERESERVE_SERVER.WRITE_TIMEOUT`
-- `CINERESERVE_SERVER.IDLE_TIMEOUT`
-- `CINERESERVE_SERVER.CORS_ALLOWED_ORIGINS`
-
-### Database
-
-- `CINERESERVE_DATABASE.HOST`
-- `CINERESERVE_DATABASE.PORT`
-- `CINERESERVE_DATABASE.USER`
-- `CINERESERVE_DATABASE.PASSWORD`
-- `CINERESERVE_DATABASE.NAME`
-- `CINERESERVE_DATABASE.SSL_MODE`
-- `CINERESERVE_DATABASE.MAX_OPEN_CONNS`
-- `CINERESERVE_DATABASE.MAX_IDLE_CONNS`
-- `CINERESERVE_DATABASE.CONN_MAX_LIFETIME`
-- `CINERESERVE_DATABASE.CONN_MAX_IDLE_TIME`
-
-### Redis
-
-- `CINERESERVE_REDIS.ADDRESS`
-
-### Auth
-
-- `CINERESERVE_AUTH.SECRET_KEY`
-
-Note:
-
-The current implementation uses shared-secret JWT validation for development. The original product plan expects Clerk-based auth, which is still pending.
-
-### Email
-
-- `CINERESERVE_INTEGRATION.RESEND_API_KEY`
-
-### App
-
-- `CINERESERVE_APP.BASE_URL`
-- `CINERESERVE_APP.NAME`
-
-### Azure Storage
-
-- `CINERESERVE_AZURE.STORAGE_ACCOUNT_NAME`
-- `CINERESERVE_AZURE.STORAGE_CONTAINER_NAME`
-- `CINERESERVE_AZURE.STORAGE_QUEUE_NAME`
-- `CINERESERVE_AZURE.STORAGE_CONNECTION_STRING`
-
-## Database and Migrations
-
-Migrations live in [apps/backend/internal/database/migrations](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/apps/backend/internal/database/migrations).
-
-Current migration set:
-
-- `001_setup.sql` creates the core schema
-- `002_seed_admin.sql` seeds an admin placeholder user
-- `003_seed_genres.sql` seeds movie genres
-- `004_seed_screens_and_seats.sql` seeds default screens and seats
-
-The schema includes:
-
-- users
-- genres
-- movies
-- movie_genres
-- screens
-- seats
-- showtimes
-- reservations
-- reservation_seats
-
-## API Overview
-
-### Public routes
+### Public
 
 - `GET /status`
+- `GET /api/v1/genres`
 - `GET /api/v1/movies`
 - `GET /api/v1/movies/:id`
 - `GET /api/v1/showtimes`
 - `GET /api/v1/showtimes/:id/seats`
+- `GET /api/v1/screens/:id/seats`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
 
-### Authenticated routes
+### Authenticated
 
 - `POST /api/v1/reservations`
 - `GET /api/v1/reservations/me`
 - `GET /api/v1/reservations/:id`
 - `DELETE /api/v1/reservations/:id`
 
-### Admin routes
+### Admin
 
 - `POST /api/v1/movies`
 - `PUT /api/v1/movies/:id`
 - `DELETE /api/v1/movies/:id`
 - `POST /api/v1/movies/:id/poster`
 - `POST /api/v1/showtimes`
+- `GET /api/v1/admin/screens`
 - `GET /api/v1/admin/reservations`
 - `GET /api/v1/admin/reports/revenue`
 - `GET /api/v1/admin/reports/capacity`
 - `PUT /api/v1/admin/users/:id/promote`
 
-## Reservation Flow
+## Reservation and Email Flow
 
-The current reservation flow is:
+Current reservation behavior:
 
-1. Validate the authenticated user and input.
-2. Lock the target showtime row with `SELECT ... FOR UPDATE`.
-3. Validate the seats belong to the showtime screen.
-4. Check that requested seats are not already reserved.
-5. Create the reservation and reservation-seat links in one transaction.
-6. Decrement `available_seats`.
-7. Commit the transaction.
-8. Enqueue a ticket confirmation email after commit.
+1. validate the request and authenticated user
+2. lock the showtime row
+3. verify the requested seats belong to that screen
+4. reject already-reserved seats and return the exact conflicting seat labels
+5. create the reservation inside a transaction
+6. decrement `available_seats`
+7. commit
+8. enqueue ticket confirmation work after commit
 
-This keeps seat availability consistent under concurrent requests and avoids sending emails for rolled-back bookings.
+Email dispatch differs by environment:
 
-## Background Jobs
+- `development`: Redis + Asynq handles the ticket confirmation job
+- `production`: the backend can enqueue to Azure Queue, and Azure Functions can process the queue message
 
-### Local development
-
-Local email dispatch uses Asynq with Redis:
-
-- Task type: `reservation:ticket_confirmation`
-
-### Azure-oriented flow
-
-The repo also includes function scaffolds for:
-
-- `functions/expire-reservations`
-- `functions/send-ticket-email`
-
-These are intended for:
-
-- expiring stale pending reservations
-- consuming queue messages and sending ticket emails
-
-## Email Templates
-
-Ticket confirmation email template:
+The email template is:
 
 - [ticket_confirmation.html](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/apps/backend/templates/emails/ticket_confirmation.html)
 
-It includes:
+## Azure and GitHub Deployment
 
-- reservation ID
-- movie title
-- show date and time
-- screen name
-- seat labels
-- total price
-- reservation deep link
+The repo now supports a GitHub-first deployment direction:
 
-## Azure Infrastructure
+- GitHub Actions deploys base infrastructure
+- GitHub Actions builds the backend Docker image
+- GitHub Actions pushes the API image to GHCR
+- GitHub Actions deploys the API image to Azure Container Apps
+- GitHub Actions builds and publishes the Azure Functions package
 
-Bicep files live under [azure](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/azure).
+Current workflow files:
+
+- [deploy-infra.yml](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/.github/workflows/deploy-infra.yml)
+- [deploy-api.yml](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/.github/workflows/deploy-api.yml)
+- [deploy-functions.yml](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/.github/workflows/deploy-functions.yml)
+
+Important current limitation:
+
+- the Bicep in this repo does not yet create the Container Apps environment, the API Container App, or the Function App host
+
+So the workflows are in place, but those host resources still need to exist before full deployment succeeds.
+
+## Infrastructure
+
+Azure infrastructure definitions live under [azure](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/azure).
 
 Current modules:
 
-- PostgreSQL
-- Container Registry
-- Storage
-- Monitoring
+- PostgreSQL Flexible Server
+- Storage Account
+- Blob container creation
+- Queue creation
 - Key Vault
-
-Still to be completed:
-
-- Container App module
-- Function App module
-- managed identity wiring
-- Key Vault secret references
-- deployment pipeline and runtime configuration
+- Log Analytics Workspace
+- optional Azure Container Registry creation
 
 ## Testing
 
-Run all current tests:
+Run tests with:
 
 ```bash
 task test
 ```
 
-What is currently covered:
+Current coverage includes:
 
 - config loading and parsing
-- health endpoint response
-- email task payload creation
+- health endpoint checks
+- job payload tests
 
-What still needs to be added:
+Still recommended:
 
 - repository integration tests
 - reservation concurrency tests
-- handler auth/admin tests
-- function integration tests
-- blob upload tests
+- handler auth and admin tests
+- Azure Functions integration tests
+- Azure deployment validation tests
+
+## Documentation
+
+Deployment docs:
+
+- [AZURE_DEPLOYMENT_RUNBOOK.md](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/docs/AZURE_DEPLOYMENT_RUNBOOK.md)
+- [GITHUB_AZURE_DEPLOYMENT_SETUP.md](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/docs/GITHUB_AZURE_DEPLOYMENT_SETUP.md)
+
+Testing assets:
+
+- [movie-reservation.postman_collection.json](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/postman/movie-reservation.postman_collection.json)
+- [movie-reservation.test-data.json](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/postman/movie-reservation.test-data.json)
+- [movie-reservation.runner-data.json](c:/Users/ZacH/Documents/Personal-Projects/movie-reservation/postman/movie-reservation.runner-data.json)
